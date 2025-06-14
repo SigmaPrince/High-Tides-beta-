@@ -1,4 +1,4 @@
--- Gui Setup
+-- Gui buddy
 local gui = Instance.new("ScreenGui", game.CoreGui)
 
 local toggleBox = Instance.new("TextButton", gui)
@@ -51,7 +51,7 @@ killBtn.MouseButton1Click:Connect(function() toggle(killBtn, "autoKill") end)
 gunBtn.MouseButton1Click:Connect(function() toggle(gunBtn, "autoGun") end)
 healBtn.MouseButton1Click:Connect(function() toggle(healBtn, "autoHeal") end)
 
--- Fast nearest functions
+-- Bruh why are you here
 local function getNearest(filter)
 	local lp = game.Players.LocalPlayer
 	local lpc = lp.Character
@@ -72,7 +72,7 @@ local function getNearest(filter)
 	return nearest
 end
 
--- Loop
+-- Loopa Loopa didu
 task.spawn(function()
 	while true do
 		local lp = game.Players.LocalPlayer
@@ -82,7 +82,7 @@ task.spawn(function()
 		local target = getNearest(function(p) return true end)
 		local teammate = getNearest(function(p) return p.Team == lp.Team end)
 
-		-- Auto Kill
+		-- Auto Kill we going crazy with this one
 		if states.autoKill and target and target.Character then
 			local tChar = target.Character
 			local tHead = tChar:FindFirstChild("Head")
@@ -101,7 +101,7 @@ task.spawn(function()
 			end
 		end
 
-		-- Auto Gun
+		-- Auto Gun bang
 		if states.autoGun and target and target.Character and target.Character:FindFirstChild("HumanoidRootPart") then
 			local gun = lpc:FindFirstChild("Blunderbuss")
 			if gun then
@@ -109,7 +109,7 @@ task.spawn(function()
 			end
 		end
 
-		-- Auto Heal
+		-- Auto Heal can this heal me from the pain
 		if states.autoHeal then
 			local kit = lpc:FindFirstChild("Bandage Kit")
 			if kit then
