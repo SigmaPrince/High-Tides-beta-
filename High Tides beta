@@ -1,4 +1,4 @@
--- Gui buddy
+-- Gui Setup
 local gui = Instance.new("ScreenGui", game.CoreGui)
 
 local toggleBox = Instance.new("TextButton", gui)
@@ -51,7 +51,7 @@ killBtn.MouseButton1Click:Connect(function() toggle(killBtn, "autoKill") end)
 gunBtn.MouseButton1Click:Connect(function() toggle(gunBtn, "autoGun") end)
 healBtn.MouseButton1Click:Connect(function() toggle(healBtn, "autoHeal") end)
 
--- Bruh why are you here
+-- Fast nearest functions
 local function getNearest(filter)
 	local lp = game.Players.LocalPlayer
 	local lpc = lp.Character
@@ -72,7 +72,7 @@ local function getNearest(filter)
 	return nearest
 end
 
--- Loopa Loopa didu
+-- Loop
 task.spawn(function()
 	while true do
 		local lp = game.Players.LocalPlayer
@@ -82,14 +82,17 @@ task.spawn(function()
 		local target = getNearest(function(p) return true end)
 		local teammate = getNearest(function(p) return p.Team == lp.Team end)
 
-		-- Auto Kill we going crazy with this one
+		-- Auto Kill
 		if states.autoKill and target and target.Character then
 			local tChar = target.Character
 			local tHead = tChar:FindFirstChild("Head")
 			local tHum = tChar:FindFirstChildOfClass("Humanoid")
 
 			if tHead and tHum and tHum.Health > 0 then
-				for _, toolName in ipairs({"Cutlass", "Zombie Fists"}) do
+				for _, toolName in ipairs({
+					"Cutlass", "Zombie Fists", "Peghook", "Fists",
+					"The Mocker", "Rapier", "Spiked Mace", "Mega Stompers"
+				}) do
 					local tool = lpc:FindFirstChild(toolName)
 					if tool then
 						game.ReplicatedStorage.Remotes.Server.MeleeInflict:FireServer(tool, tChar, tHead)
@@ -101,15 +104,21 @@ task.spawn(function()
 			end
 		end
 
-		-- Auto Gun bang
+		-- Auto Gun
 		if states.autoGun and target and target.Character and target.Character:FindFirstChild("HumanoidRootPart") then
-			local gun = lpc:FindFirstChild("Blunderbuss")
-			if gun then
-				game.ReplicatedStorage.Remotes.Server.GunInflict:FireServer(gun, target.Character, target.Character.HumanoidRootPart)
+			for _, gunName in ipairs({
+				"Blunderbuss", "Flintlock", "Shortshot",
+				"Femme Fatale", "Igniter", "Flanker",
+				"Musket", "The Navy"
+			}) do
+				local gun = lpc:FindFirstChild(gunName)
+				if gun then
+					game.ReplicatedStorage.Remotes.Server.GunInflict:FireServer(gun, target.Character, target.Character.HumanoidRootPart)
+				end
 			end
 		end
 
-		-- Auto Heal can this heal me from the pain
+		-- Auto Heal
 		if states.autoHeal then
 			local kit = lpc:FindFirstChild("Bandage Kit")
 			if kit then
