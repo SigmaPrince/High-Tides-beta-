@@ -1,0 +1,127 @@
+-- Gui Setup
+local gui = Instance.new("ScreenGui", game.CoreGui)
+
+local toggleBox = Instance.new("TextButton", gui)
+toggleBox.Size = UDim2.new(0, 30, 0, 30)
+toggleBox.Position = UDim2.new(0.5, -15, 0.2, 0)
+toggleBox.Text = "+"
+toggleBox.BackgroundColor3 = Color3.new(1,1,1)
+toggleBox.TextColor3 = Color3.new(0,0,0)
+toggleBox.Active = true
+toggleBox.Draggable = true
+
+local function createButton(text, y)
+	local b = Instance.new("TextButton", gui)
+	b.Size = UDim2.new(0, 100, 0, 30)
+	b.Position = toggleBox.Position + UDim2.new(0, 35, 0, y)
+	b.Text = text .. ": OFF"
+	b.BackgroundColor3 = Color3.new(1,1,1)
+	b.TextColor3 = Color3.new(0,0,0)
+	b.Visible = false
+	return b
+end
+
+local killBtn = createButton("Auto Kill", 0)
+local gunBtn = createButton("Auto Gun", 35)
+local healBtn = createButton("Auto Heal", 70)
+
+toggleBox:GetPropertyChangedSignal("Position"):Connect(function()
+	killBtn.Position = toggleBox.Position + UDim2.new(0, 35, 0, 0)
+	gunBtn.Position = toggleBox.Position + UDim2.new(0, 35, 0, 35)
+	healBtn.Position = toggleBox.Position + UDim2.new(0, 35, 0, 70)
+end)
+
+local show = false
+toggleBox.MouseButton1Click:Connect(function()
+	show = not show
+	killBtn.Visible = show
+	gunBtn.Visible = show
+	healBtn.Visible = show
+end)
+
+local states = { autoKill = false, autoGun = false, autoHeal = false }
+local function toggle(btn, key)
+	states[key] = not states[key]
+	btn.Text = key:gsub("^%l", string.upper):gsub("Auto", "Auto ") .. ": " .. (states[key] and "ON" or "OFF")
+	btn.BackgroundColor3 = states[key] and Color3.new(0,0,0) or Color3.new(1,1,1)
+	btn.TextColor3 = states[key] and Color3.new(1,1,1) or Color3.new(0,0,0)
+end
+
+killBtn.MouseButton1Click:Connect(function() toggle(killBtn, "autoKill") end)
+gunBtn.MouseButton1Click:Connect(function() toggle(gunBtn, "autoGun") end)
+healBtn.MouseButton1Click:Connect(function() toggle(healBtn, "autoHeal") end)
+
+-- Fast nearest functions
+local function getNearest(filter)
+	local lp = game.Players.LocalPlayer
+	local lpc = lp.Character
+	local pos = lpc and lpc:FindFirstChild("HumanoidRootPart") and lpc.HumanoidRootPart.Position
+	if not pos then return nil end
+
+	local nearest, minDist = nil, math.huge
+	for _, p in ipairs(game.Players:GetPlayers()) do
+		if p ~= lp and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+			if not filter or filter(p) then
+				local dist = (pos - p.Character.HumanoidRootPart.Position).Magnitude
+				if dist < minDist then
+					nearest, minDist = p, dist
+				end
+			end
+		end
+	end
+	return nearest
+end
+
+-- Loop
+task.spawn(function()
+	while true do
+		local lp = game.Players.LocalPlayer
+		local lpc = lp.Character
+		if not lpc then task.wait(0.15) continue end
+
+		local target = getNearest(function(p) return true end)
+		local teammate = getNearest(function(p) return p.Team == lp.Team end)
+
+		-- Auto Kill
+		if states.autoKill and target and target.Character then
+			local tChar = target.Character
+			local tHead = tChar:FindFirstChild("Head")
+			local tHum = tChar:FindFirstChildOfClass("Humanoid")
+
+			if tHead and tHum and tHum.Health > 0 then
+				for _, toolName in ipairs({"Cutlass", "Zombie Fists"}) do
+					local tool = lpc:FindFirstChild(toolName)
+					if tool then
+						game.ReplicatedStorage.Remotes.Server.MeleeInflict:FireServer(tool, tChar, tHead)
+						if toolName == "Cutlass" then
+							game.ReplicatedStorage.Remotes.Server.MeleeDeflect:FireServer(tool)
+						end
+					end
+				end
+			end
+		end
+
+		-- Auto Gun
+		if states.autoGun and target and target.Character and target.Character:FindFirstChild("HumanoidRootPart") then
+			local gun = lpc:FindFirstChild("Blunderbuss")
+			if gun then
+				game.ReplicatedStorage.Remotes.Server.GunInflict:FireServer(gun, target.Character, target.Character.HumanoidRootPart)
+			end
+		end
+
+		-- Auto Heal
+		if states.autoHeal then
+			local kit = lpc:FindFirstChild("Bandage Kit")
+			if kit then
+				for _ = 1, 5 do
+					game.ReplicatedStorage.Remotes.Server.HealerInflict:FireServer(kit, lpc)
+					if teammate and teammate.Character then
+						game.ReplicatedStorage.Remotes.Server.HealerInflict:FireServer(kit, teammate.Character)
+					end
+				end
+			end
+		end
+
+		task.wait(0.15)
+	end
+end)
